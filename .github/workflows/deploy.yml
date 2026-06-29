@@ -1,0 +1,101 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  FUNCTION_NAME: ai-code-review-sandbox-orchestrator
+  LAYER_NAME: code-review-deps
+  FRONTEND_BUCKET: ai-code-review-sandbox-frontend-593845248500-us-east-1-an
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  deploy-lambda:
+    name: Deploy Lambda + Layer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::593845248500:role/Github-OIDC-ECS-Dheeraj
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build Lambda Layer
+        run: |
+          mkdir -p python/lib/python3.11/site-packages
+          pip install requests boto3 -t python/lib/python3.11/site-packages --quiet
+          zip -r layer.zip python/
+
+      - name: Deploy Layer
+        id: layer
+        run: |
+          LAYER_ARN=$(aws lambda publish-layer-version \
+            --layer-name ${{ env.LAYER_NAME }} \
+            --zip-file fileb://layer.zip \
+            --compatible-runtimes python3.11 \
+            --query 'LayerVersionArn' \
+            --output text)
+          echo "layer_arn=$LAYER_ARN" >> $GITHUB_OUTPUT
+
+      - name: Package Orchestrator
+        run: |
+          cd src/orchestrator
+          zip -r ../../lambda.zip app.py scanners.py microvm_client.py reviewer.py
+          cd ../..
+
+      - name: Deploy Lambda Code
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.FUNCTION_NAME }} \
+            --zip-file fileb://lambda.zip
+
+      - name: Wait for update
+        run: |
+          aws lambda wait function-updated \
+            --function-name ${{ env.FUNCTION_NAME }}
+
+      - name: Attach Layer
+        run: |
+          aws lambda update-function-configuration \
+            --function-name ${{ env.FUNCTION_NAME }} \
+            --layers ${{ steps.layer.outputs.layer_arn }}
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: deploy-lambda
+    if: contains(github.event.head_commit.modified, 'frontend/')  || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::593845248500:role/Github-OIDC-ECS-Dheeraj
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync Frontend to S3
+        run: |
+          aws s3 sync frontend/ s3://${{ env.FRONTEND_BUCKET }}/ --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
+            --paths "/*"
