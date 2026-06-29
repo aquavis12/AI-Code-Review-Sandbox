@@ -44,6 +44,7 @@ Scan **PyPI, npm, Maven & Git repos** for vulnerabilities — each scan runs in 
 | **Maven** | OWASP dependency-check, NVD CVE lookup, transitive deps |
 | **Git repo** | bandit, ruff, secrets detection, dependency audit |
 
+
 ---
 
 ## Quick Start
@@ -74,6 +75,8 @@ curl -X POST https://YOUR_FUNCTION_URL/scan \
 | Install scripts can escape | Firecracker sandbox boundary |
 | Cross-contamination between scans | Each scan = fresh VM, destroyed after |
 
+| Cross-contamination between scans | Each scan = fresh VM, destroyed after |
+
 ---
 
 ## Project Structure
@@ -88,16 +91,24 @@ curl -X POST https://YOUR_FUNCTION_URL/scan \
 │   ├── scanners.py              # Scan steps per package type
 │   ├── microvm_client.py        # MicroVM lifecycle (spawn/exec/terminate)
 │   └── reviewer.py              # Bedrock Kimi K2.5 integration
+├── .github/workflows/
+│   └── deploy.yml               # CI/CD (GitHub OIDC → AWS)
 ├── docs/
 │   ├── architecture.md          # Detailed diagrams
-│   ├── architecture-diagram.png # Visual architecture
-│   └── MANUAL-SETUP-GUIDE.md    # Step-by-step AWS Console setup
+│   ├── MANUAL-SETUP-GUIDE.md    # Step-by-step AWS Console setup
+│   └── MANUAL-SETUP-GUIDE.docx  # Word version
 └── scripts/                     # Deploy & test scripts
 ```
 
 ---
 
 ## Deploy
+
+### CI/CD (Automated)
+
+Push to `main` triggers GitHub Actions → builds layer → deploys Lambda → syncs frontend. Uses GitHub OIDC for keyless AWS auth.
+
+### Manual
 
 ```bash
 # 1. Create Lambda Layer (requests + latest boto3)
@@ -118,6 +129,17 @@ aws lambda-microvms create-microvm-image --name code-review-sandbox \
 ```
 
 > Full console walkthrough: [`docs/MANUAL-SETUP-GUIDE.md`](docs/MANUAL-SETUP-GUIDE.md)
+
+---
+
+## Features
+
+- Dark/Light theme toggle (persisted in localStorage)
+- Scan history with re-view, download, delete
+- Download reports as JSON or Markdown
+- Real-time progress indicator during scans
+- OWASP Top 10 mapping in AI analysis
+- Supply chain risk detection
 
 ---
 

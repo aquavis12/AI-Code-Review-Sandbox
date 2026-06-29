@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     :root {
+      --bg-body: #0d1117;
       --bg: #0d1117;
       --bg-card: #161b22;
       --bg-input: #0d1117;
@@ -30,9 +31,34 @@
       --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'SF Mono', 'Fira Code', Consolas, monospace;
     }
+    [data-theme="light"] {
+      --bg-body: #f6f8fa;
+      --bg: #ffffff;
+      --bg-card: #ffffff;
+      --bg-input: #f6f8fa;
+      --border: #d1d9e0;
+      --border-focus: #0969da;
+      --text: #1f2328;
+      --text-secondary: #59636e;
+      --text-muted: #818b98;
+      --accent: #0969da;
+      --accent-hover: #0550ae;
+      --success: #1a7f37;
+      --success-bg: rgba(26,127,55,0.1);
+      --warning: #9a6700;
+      --warning-bg: rgba(154,103,0,0.1);
+      --error: #d1242f;
+      --error-bg: rgba(209,36,47,0.1);
+      --purple: #8250df;
+      --purple-bg: rgba(130,80,223,0.1);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; padding: 40px 20px; }
+    body { background: var(--bg-body); color: var(--text); font-family: var(--font); min-height: 100vh; padding: 40px 20px; transition: background 0.3s, color 0.3s; }
     .container { max-width: 900px; margin: 0 auto; }
+
+    /* Theme toggle */
+    .theme-toggle { position: fixed; top: 20px; right: 20px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg-card); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); font-size: 16px; transition: all 0.2s; z-index: 100; }
+    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.05); }
 
     .header { text-align: center; margin-bottom: 32px; }
     .header h1 { font-size: 26px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -164,6 +190,9 @@
 </head>
 <body>
   <div class="container">
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">
+      <i class="fa-solid fa-sun"></i></button>
     <div class="header">
       <h1><i class="fa-solid fa-shield-halved"></i> AI Code Review Sandbox</h1>
       <p>Scan packages & repos for vulnerabilities in isolated Lambda MicroVMs</p>
@@ -598,6 +627,25 @@
 
     // Init
     updateHistoryCount();
+
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      document.getElementById('themeToggle').innerHTML =
+        next === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    }
+
+    // Load saved theme
+    (function() {
+      const saved = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('themeToggle').innerHTML =
+        saved === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    })();
   </script>
 </body>
 </html>

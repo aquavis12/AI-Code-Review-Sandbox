@@ -24,3 +24,5 @@ layer/layer.zip
 
 # Generated docs
 docs/*.png
+
+/blog/*
