@@ -1,6 +1,9 @@
-# SAM
-.aws-sam/
-packaged.yaml
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/.build/
 
 # Python
 __pycache__/
@@ -18,9 +21,7 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Build
-node_modules/
-dist/
-build/
-
+# Build artifacts
+*.zip
 IDEAS.md
+WHY.md
