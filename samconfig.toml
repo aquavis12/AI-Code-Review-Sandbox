@@ -1,0 +1,12 @@
+# SAM CLI config — run `sam deploy --guided` first time to populate
+[default.deploy.parameters]
+stack_name = "ai-code-review-sandbox"
+resolve_s3 = true
+s3_prefix = "ai-code-review-sandbox"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+
+[default.build.parameters]
+use_container = false
+parallel = true

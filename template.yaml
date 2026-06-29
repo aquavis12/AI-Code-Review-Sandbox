@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AI Code Review Sandbox — Lambda MicroVMs + Bedrock Kimi K2.5
+
+Parameters:
+  MicroVMImageName:
+    Type: String
+    Default: code-review-sandbox
+    Description: Name of the pre-built MicroVM image
+  BedrockModelId:
+    Type: String
+    Default: moonshotai.kimi-k2.5
+    Description: Bedrock model for AI analysis (Kimi K2.5 - fast & cheap)
+
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'POST,GET,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization,X-Requested-With'"
+      AllowOrigin: "'*'"
+
+Resources:
+  # ============================================
+  # API Gateway
+  # ============================================
+  ReviewApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'POST,GET,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Requested-With'"
+        AllowOrigin: "'*'"
+
+  # ============================================
+  # Orchestrator Lambda
+  # ============================================
+  ReviewOrchestrator:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-orchestrator'
+      Runtime: python3.11
+      Handler: app.handler
+      CodeUri: src/orchestrator/
+      MemorySize: 512
+      Timeout: 120
+      Environment:
+        Variables:
+          MICROVM_IMAGE_NAME: !Ref MicroVMImageName
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          RESULTS_BUCKET: !Ref ResultsBucket
+          AWS_REGION_NAME: !Ref AWS::Region
+      Policies:
+        # Lambda MicroVMs permissions
+        - Statement:
+            - Effect: Allow
+              Action:
+                - lambda-microvms:RunMicrovm
+                - lambda-microvms:GetMicrovm
+                - lambda-microvms:TerminateMicrovm
+                - lambda-microvms:CreateMicrovmAuthToken
+              Resource: '*'
+        # Bedrock
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              Resource: '*'
+        # S3 for results
+        - S3CrudPolicy:
+            BucketName: !Ref ResultsBucket
+      Events:
+        ReviewPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReviewApi
+            Path: /review
+            Method: post
+        ReviewGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReviewApi
+            Path: /review/{review_id}
+            Method: get
+
+  # ============================================
+  # S3 — Review Reports
+  # ============================================
+  ResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-results-${AWS::AccountId}'
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupOldReviews
+            Status: Enabled
+            ExpirationInDays: 30
+
+  # ============================================
+  # Frontend — S3 + CloudFront
+  # ============================================
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-frontend-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${FrontendBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${AWS::StackName}-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+Outputs:
+  ApiUrl:
+    Description: Review API endpoint
+    Value: !Sub 'https://${ReviewApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/'
+  ResultsBucket:
+    Description: S3 bucket for review reports
+    Value: !Ref ResultsBucket
+  FrontendUrl:
+    Description: CloudFront URL for the frontend
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+  FrontendBucketName:
+    Description: S3 bucket for frontend files
+    Value: !Ref FrontendBucket

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Code Review Sandbox</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-card: #161b22;
+      --bg-input: #0d1117;
+      --border: #30363d;
+      --border-focus: #58a6ff;
+      --text: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --success: #3fb950;
+      --success-bg: rgba(63,185,80,0.1);
+      --warning: #d29922;
+      --warning-bg: rgba(210,153,34,0.1);
+      --error: #f85149;
+      --error-bg: rgba(248,81,73,0.1);
+      --info: #58a6ff;
+      --info-bg: rgba(88,166,255,0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'SF Mono', 'Fira Code', Consolas, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .header h1 i { color: var(--accent); }
+    .header p {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--info-bg);
+      color: var(--accent);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      margin-top: 12px;
+      font-weight: 500;
+    }
+    .badge i { font-size: 10px; }
+
+    /* Input Form */
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .form-row:last-child { margin-bottom: 0; }
+    
+    .input-group {
+      flex: 1;
+      position: relative;
+    }
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .input-group input, .input-group select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: var(--font-mono);
+      transition: border-color 0.15s;
+    }
+    .input-group input:focus, .input-group select:focus {
+      outline: none;
+      border-color: var(--border-focus);
+    }
+    .input-group input::placeholder { color: var(--text-muted); }
+
+    /* Checks */
+    .checks {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 13px;
+    }
+    .check-item:hover { border-color: var(--text-muted); }
+    .check-item.active { border-color: var(--accent); background: var(--info-bg); }
+    .check-item input { display: none; }
+    .check-item i { font-size: 14px; color: var(--text-muted); }
+    .check-item.active i { color: var(--accent); }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-submit:hover { background: var(--accent-hover); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-submit .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+    .btn-submit.loading .spinner { display: block; }
+    .btn-submit.loading .btn-text { display: none; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Results */
+    .results { display: none; }
+    .results.visible { display: block; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .result-header h2 { font-size: 18px; font-weight: 600; }
+    .result-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .result-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* Risk Level */
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .risk-low { background: var(--success-bg); color: var(--success); }
+    .risk-medium { background: var(--warning-bg); color: var(--warning); }
+    .risk-high { background: var(--error-bg); color: var(--error); }
+    .risk-critical { background: var(--error-bg); color: var(--error); }
+
+    /* Summary Card */
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .summary-card p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Findings Grid */
+    .findings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .finding-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .finding-card h3 {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .finding-card h3 i { font-size: 14px; }
+    .finding-counts {
+      display: flex;
+      gap: 12px;
+    }
+    .count-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .count-item .num {
+      font-size: 24px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+    .count-item .label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .count-item.critical .num { color: var(--error); }
+    .count-item.high .num { color: var(--warning); }
+    .count-item.medium .num { color: var(--text-secondary); }
+    .count-item.low .num { color: var(--text-muted); }
+
+    .quality-score {
+      font-size: 36px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    /* Recommendations */
+    .recommendations {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+    .recommendations h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .recommendations h3 i { color: var(--accent); }
+    .rec-list { list-style: none; }
+    .rec-list li {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.5;
+    }
+    .rec-list li:last-child { border-bottom: none; }
+    .rec-list li i { color: var(--accent); margin-top: 3px; font-size: 12px; }
+
+    /* Progress */
+    .progress-bar {
+      display: none;
+      margin-bottom: 24px;
+    }
+    .progress-bar.visible { display: block; }
+    .progress-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      transition: all 0.3s;
+    }
+    .step.active { color: var(--text); background: var(--bg-card); }
+    .step.done { color: var(--success); }
+    .step.done i { color: var(--success); }
+    .step i { width: 16px; text-align: center; }
+
+    @media (max-width: 600px) {
+      .form-row { flex-direction: column; }
+      .findings-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1><i class="fa-solid fa-shield-halved"></i> AI Code Review Sandbox</h1>
+      <p>Paste a repo URL → Lambda MicroVM clones, scans & analyzes → AI report in seconds</p>
+      <span class="badge"><i class="fa-solid fa-microchip"></i> Powered by Lambda MicroVMs + Bedrock Claude</span>
+    </div>
+
+    <!-- Form -->
+    <div class="form-card">
+      <div class="form-row">
+        <div class="input-group">
+          <label>Repository URL</label>
+          <input type="text" id="repoUrl" placeholder="https://github.com/user/repo" value="https://github.com/psf/requests">
+        </div>
+        <div class="input-group" style="max-width: 140px;">
+          <label>Branch</label>
+          <input type="text" id="branch" placeholder="main" value="main">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="input-group">
+          <label>Checks to run</label>
+          <div class="checks">
+            <label class="check-item active">
+              <input type="checkbox" value="security" checked>
+              <i class="fa-solid fa-shield"></i> Security
+            </label>
+            <label class="check-item active">
+              <input type="checkbox" value="quality" checked>
+              <i class="fa-solid fa-code"></i> Quality
+            </label>
+            <label class="check-item">
+              <input type="checkbox" value="tests">
+              <i class="fa-solid fa-flask-vial"></i> Tests
+            </label>
+            <label class="check-item">
+              <input type="checkbox" value="deps">
+              <i class="fa-solid fa-cubes"></i> Dependencies
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <button class="btn-submit" id="submitBtn" onclick="startReview()">
+          <span class="spinner"></span>
+          <span class="btn-text"><i class="fa-solid fa-play"></i> Start Review</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar" id="progress">
+      <div class="progress-steps" id="progressSteps"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+      <div class="result-header">
+        <h2>Review Complete</h2>
+        <div class="result-meta">
+          <span><i class="fa-regular fa-clock"></i> <span id="duration">-</span></span>
+          <span><i class="fa-solid fa-fingerprint"></i> <span id="reviewId">-</span></span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <span class="risk-badge" id="riskBadge">-</span>
+      </div>
+
+      <div class="summary-card">
+        <p id="aiSummary">-</p>
+      </div>
+
+      <div class="findings-grid">
+        <div class="finding-card">
+          <h3><i class="fa-solid fa-shield"></i> Security</h3>
+          <div class="finding-counts" id="securityFindings">
+            <div class="count-item critical"><span class="num">0</span><span class="label">Critical</span></div>
+            <div class="count-item high"><span class="num">0</span><span class="label">High</span></div>
+            <div class="count-item medium"><span class="num">0</span><span class="label">Medium</span></div>
+            <div class="count-item low"><span class="num">0</span><span class="label">Low</span></div>
+          </div>
+        </div>
+        <div class="finding-card">
+          <h3><i class="fa-solid fa-code"></i> Quality</h3>
+          <div id="qualityFindings">
+            <span class="quality-score">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="recommendations">
+        <h3><i class="fa-solid fa-lightbulb"></i> Recommendations</h3>
+        <ul class="rec-list" id="recList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle check items
+    document.querySelectorAll('.check-item').forEach(item => {
+      item.addEventListener('click', () => {
+        item.classList.toggle('active');
+        item.querySelector('input').checked = item.classList.contains('active');
+      });
+    });
+
+    const API_URL = ''; // Set to your deployed API Gateway URL
+
+    const STEPS = [
+      { icon: 'fa-rocket', text: 'Spawning MicroVM...' },
+      { icon: 'fa-code-branch', text: 'Cloning repository...' },
+      { icon: 'fa-download', text: 'Installing dependencies...' },
+      { icon: 'fa-shield', text: 'Running security scan (Bandit + Safety)...' },
+      { icon: 'fa-code', text: 'Running quality check (Ruff)...' },
+      { icon: 'fa-robot', text: 'AI analyzing findings (Bedrock Claude)...' },
+      { icon: 'fa-check', text: 'Generating report...' },
+    ];
+
+    function startReview() {
+      const btn = document.getElementById('submitBtn');
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      document.getElementById('results').classList.remove('visible');
+      document.getElementById('progress').classList.add('visible');
+
+      // Simulate progress (replace with real API call + polling)
+      simulateProgress().then(result => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        document.getElementById('progress').classList.remove('visible');
+        showResults(result);
+      });
+    }
+
+    async function simulateProgress() {
+      const stepsEl = document.getElementById('progressSteps');
+      stepsEl.innerHTML = '';
+
+      for (let i = 0; i < STEPS.length; i++) {
+        const step = document.createElement('div');
+        step.className = 'step';
+        step.innerHTML = `<i class="fa-solid ${STEPS[i].icon}"></i> ${STEPS[i].text}`;
+        stepsEl.appendChild(step);
+      }
+
+      for (let i = 0; i < STEPS.length; i++) {
+        const steps = stepsEl.querySelectorAll('.step');
+        steps[i].classList.add('active');
+        await sleep(800 + Math.random() * 600);
+        steps[i].classList.remove('active');
+        steps[i].classList.add('done');
+        steps[i].querySelector('i').className = 'fa-solid fa-check';
+      }
+
+      // Return mock result (replace with actual API response)
+      return {
+        review_id: 'rv-' + Math.random().toString(36).substr(2, 8),
+        duration_ms: 4200 + Math.floor(Math.random() * 2000),
+        risk_level: 'medium',
+        ai_summary: 'The codebase is well-maintained with strong test coverage. Two medium-severity issues found in dependency versions (urllib3 CVE-2023-45803, certifi CVE-2023-37920). Code quality is good with minor style inconsistencies in 3 modules. No critical vulnerabilities detected.',
+        findings: {
+          security: { critical: 0, high: 0, medium: 2, low: 5 },
+          quality: { score: 'A-', issues: 12 }
+        },
+        recommendations: [
+          'Upgrade urllib3 to ≥2.0.7 to patch CVE-2023-45803 (SSRF via crafted URL)',
+          'Upgrade certifi to ≥2023.07.22 to remove untrusted Trustwave root CA',
+          'Add type hints to public API in sessions.py and adapters.py',
+          'Replace deprecated ssl.wrap_socket() calls with SSLContext pattern',
+          'Consider adding py.typed marker for PEP 561 compliance'
+        ]
+      };
+    }
+
+    function showResults(data) {
+      document.getElementById('results').classList.add('visible');
+      document.getElementById('duration').textContent = (data.duration_ms / 1000).toFixed(1) + 's';
+      document.getElementById('reviewId').textContent = data.review_id;
+
+      // Risk badge
+      const riskBadge = document.getElementById('riskBadge');
+      riskBadge.textContent = data.risk_level.toUpperCase();
+      riskBadge.className = `risk-badge risk-${data.risk_level}`;
+
+      // Summary
+      document.getElementById('aiSummary').textContent = data.ai_summary;
+
+      // Security findings
+      if (data.findings.security) {
+        const sec = data.findings.security;
+        const counts = document.querySelectorAll('#securityFindings .count-item .num');
+        counts[0].textContent = sec.critical;
+        counts[1].textContent = sec.high;
+        counts[2].textContent = sec.medium;
+        counts[3].textContent = sec.low;
+      }
+
+      // Quality
+      if (data.findings.quality) {
+        document.getElementById('qualityFindings').innerHTML = `
+          <span class="quality-score">${data.findings.quality.score}</span>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">${data.findings.quality.issues} issues</div>
+        `;
+      }
+
+      // Recommendations
+      const recList = document.getElementById('recList');
+      recList.innerHTML = data.recommendations.map(r =>
+        `<li><i class="fa-solid fa-arrow-right"></i> ${r}</li>`
+      ).join('');
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  </script>
+</body>
+</html>
