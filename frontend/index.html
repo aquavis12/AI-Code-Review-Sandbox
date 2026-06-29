@@ -44,32 +44,30 @@
     .badge-purple { background: var(--purple-bg); color: var(--purple); }
     .badge-green { background: var(--success-bg); color: var(--success); }
 
-    /* Target Type Selector */
     .type-selector { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .type-btn { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; color: var(--text-secondary); font-size: 13px; font-weight: 500; transition: all 0.15s; flex: 1; justify-content: center; }
     .type-btn:hover { border-color: var(--text-muted); color: var(--text); }
     .type-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,0.05); }
     .type-btn i { font-size: 16px; }
 
-    /* Form */
     .form-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
     .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
     .form-row:last-child { margin-bottom: 0; }
     .input-group { flex: 1; }
     .input-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .input-group input, .input-group select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; color: var(--text); font-size: 13px; font-family: var(--font-mono); transition: border-color 0.15s; }
+    .input-group input { width: 100%; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; color: var(--text); font-size: 13px; font-family: var(--font-mono); transition: border-color 0.15s; }
     .input-group input:focus { outline: none; border-color: var(--border-focus); }
     .input-group input::placeholder { color: var(--text-muted); }
     .hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
-    /* Checks */
-    .checks { display: flex; gap: 8px; flex-wrap: wrap; }
-    .check-item { display: flex; align-items: center; gap: 6px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 12px; cursor: pointer; transition: all 0.15s; font-size: 12px; }
+    .checks { display: flex; gap: 10px; flex-wrap: wrap; }
+    .check-item { display: flex; align-items: center; gap: 8px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px; cursor: pointer; transition: all 0.15s; font-size: 13px; user-select: none; }
     .check-item:hover { border-color: var(--text-muted); }
-    .check-item.active { border-color: var(--accent); background: rgba(88,166,255,0.05); color: var(--accent); }
+    .check-item.active { border-color: var(--accent); background: rgba(88,166,255,0.08); color: var(--accent); box-shadow: 0 0 0 1px rgba(88,166,255,0.2); }
+    .check-item .check-icon { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; transition: all 0.15s; }
+    .check-item.active .check-icon { background: var(--accent); border-color: var(--accent); color: #fff; }
     .check-item input { display: none; }
 
-    /* Button */
     .btn-submit { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-submit:hover { background: var(--accent-hover); }
     .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -78,15 +76,14 @@
     .btn-submit.loading .btn-text { display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Progress */
     .progress { display: none; margin-bottom: 20px; }
     .progress.visible { display: block; }
-    .step { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); padding: 6px 10px; border-radius: var(--radius); transition: all 0.3s; }
+    .step { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); padding: 6px 10px; border-radius: var(--radius); transition: all 0.3s; margin-bottom: 4px; }
     .step.active { color: var(--text); background: var(--bg-card); }
     .step.done { color: var(--success); }
+    .step.error { color: var(--error); }
     .step i { width: 14px; text-align: center; }
 
-    /* Results */
     .results { display: none; }
     .results.visible { display: block; }
     .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -123,6 +120,10 @@
     .rec-list li:last-child { border-bottom: none; }
     .rec-list li i { color: var(--accent); margin-top: 2px; font-size: 11px; }
 
+    .error-card { background: var(--error-bg); border: 1px solid rgba(248,81,73,0.3); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; display: none; }
+    .error-card.visible { display: block; }
+    .error-card p { color: var(--error); font-size: 13px; }
+
     @media (max-width: 600px) { .form-row { flex-direction: column; } .findings-grid { grid-template-columns: 1fr; } .type-selector { flex-direction: column; } }
   </style>
 </head>
@@ -138,7 +139,6 @@
       </div>
     </div>
 
-    <!-- Target Type -->
     <div class="type-selector">
       <div class="type-btn active" data-type="pypi" onclick="setType('pypi')"><i class="fa-brands fa-python"></i> PyPI</div>
       <div class="type-btn" data-type="npm" onclick="setType('npm')"><i class="fa-brands fa-npm"></i> npm</div>
@@ -146,7 +146,6 @@
       <div class="type-btn" data-type="git" onclick="setType('git')"><i class="fa-brands fa-github"></i> Git Repo</div>
     </div>
 
-    <!-- Form -->
     <div class="form-card">
       <div class="form-row">
         <div class="input-group" style="flex:3">
@@ -162,12 +161,12 @@
       <div class="form-row">
         <div class="input-group">
           <label>Checks</label>
-          <div class="checks">
-            <label class="check-item active"><input type="checkbox" value="security" checked> 🔒 Security</label>
-            <label class="check-item active"><input type="checkbox" value="owasp" checked> 🛡️ OWASP</label>
-            <label class="check-item active"><input type="checkbox" value="quality" checked> 📐 Quality</label>
-            <label class="check-item"><input type="checkbox" value="license"> 📄 License</label>
-            <label class="check-item"><input type="checkbox" value="typosquat"> 🎭 Typosquat</label>
+          <div class="checks" id="checksContainer">
+            <label class="check-item active"><input type="checkbox" value="security" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> Security</label>
+            <label class="check-item active"><input type="checkbox" value="owasp" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> OWASP</label>
+            <label class="check-item active"><input type="checkbox" value="quality" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> Quality</label>
+            <label class="check-item"><input type="checkbox" value="license"><span class="check-icon"><i class="fa-solid fa-check"></i></span> License</label>
+            <label class="check-item"><input type="checkbox" value="typosquat"><span class="check-icon"><i class="fa-solid fa-check"></i></span> Typosquat</label>
           </div>
         </div>
       </div>
@@ -179,10 +178,10 @@
       </div>
     </div>
 
-    <!-- Progress -->
     <div class="progress" id="progress"></div>
 
-    <!-- Results -->
+    <div class="error-card" id="errorCard"><p id="errorText"></p></div>
+
     <div class="results" id="results">
       <div class="result-header">
         <h2>Scan Complete</h2>
@@ -215,7 +214,9 @@
   </div>
 
   <script>
-    const API_URL = '';
+    // ⚠️ SET THIS TO YOUR API GATEWAY URL AFTER DEPLOYMENT
+    const API_URL = '/prod';
+
     let currentType = 'pypi';
 
     const TYPE_CONFIG = {
@@ -235,81 +236,130 @@
       document.getElementById('targetVersion').value = type === 'git' ? 'main' : 'latest';
     }
 
+    // Checkbox toggle
     document.querySelectorAll('.check-item').forEach(item => {
-      item.addEventListener('click', () => { item.classList.toggle('active'); item.querySelector('input').checked = item.classList.contains('active'); });
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const checkbox = item.querySelector('input');
+        checkbox.checked = !checkbox.checked;
+        item.classList.toggle('active', checkbox.checked);
+      });
     });
 
-    const STEPS_MAP = {
-      pypi: ['Spawning MicroVM...', 'Installing package...', 'Running pip-audit...', 'Running bandit...', 'OWASP checks...', 'AI analyzing...', 'Done'],
-      npm: ['Spawning MicroVM...', 'Installing package...', 'Running npm audit...', 'Checking install scripts...', 'OWASP checks...', 'AI analyzing...', 'Done'],
-      mvn: ['Spawning MicroVM...', 'Setting up Maven...', 'Resolving dependencies...', 'OWASP dependency-check...', 'CVE lookup (NVD)...', 'AI analyzing...', 'Done'],
-      git: ['Spawning MicroVM...', 'Cloning repo...', 'Installing deps...', 'Running bandit...', 'OWASP checks...', 'AI analyzing...', 'Done']
-    };
+    function getSelectedChecks() {
+      return Array.from(document.querySelectorAll('.check-item input:checked')).map(c => c.value);
+    }
 
     async function startScan() {
       const name = document.getElementById('targetName').value.trim();
       if (!name) { document.getElementById('targetName').focus(); return; }
 
+      const version = document.getElementById('targetVersion').value.trim() || 'latest';
+      const checks = getSelectedChecks();
+
+      if (checks.length === 0) {
+        showError('Select at least one check to run.');
+        return;
+      }
+
       const btn = document.getElementById('submitBtn');
       btn.classList.add('loading'); btn.disabled = true;
       document.getElementById('results').classList.remove('visible');
+      document.getElementById('errorCard').classList.remove('visible');
 
+      // Show progress
       const progressEl = document.getElementById('progress');
       progressEl.classList.add('visible');
-      progressEl.innerHTML = STEPS_MAP[currentType].map(s => `<div class="step"><i class="fa-solid fa-circle-notch"></i> ${s}</div>`).join('');
+      progressEl.innerHTML = '<div class="step active"><i class="fa-solid fa-circle-notch fa-spin"></i> Sending scan request...</div>';
 
-      const steps = progressEl.querySelectorAll('.step');
-      for (let i = 0; i < steps.length; i++) {
-        steps[i].classList.add('active');
-        await sleep(600 + Math.random() * 500);
-        steps[i].classList.remove('active');
-        steps[i].classList.add('done');
-        steps[i].querySelector('i').className = 'fa-solid fa-check';
+      // Build request body
+      const body = {
+        target: {
+          type: currentType,
+          name: name,
+          version: version,
+          checks: checks
+        }
+      };
+      if (currentType === 'git') {
+        body.target.branch = version;
       }
 
-      // Mock result (replace with real API call when API_URL is set)
-      const result = getMockResult(name);
+      // Check if API is configured
+      if (!API_URL) {
+        showError('API not connected. Set API_URL in the frontend code after deploying the backend. Run: terraform output api_url');
+        btn.classList.remove('loading'); btn.disabled = false;
+        progressEl.classList.remove('visible');
+        return;
+      }
+
+      // Call real API
+      try {
+        progressEl.innerHTML = '<div class="step active"><i class="fa-solid fa-circle-notch fa-spin"></i> Scanning in isolated MicroVM...</div>';
+
+        const apiBase = API_URL.endsWith('/') ? API_URL : API_URL + '/';
+        const response = await fetch(`${apiBase}scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `API returned ${response.status}`);
+        }
+
+        progressEl.innerHTML = '<div class="step done"><i class="fa-solid fa-check"></i> Scan complete</div>';
+        await sleep(500);
+        progressEl.classList.remove('visible');
+
+        showResults(data);
+
+      } catch (err) {
+        progressEl.innerHTML = `<div class="step error"><i class="fa-solid fa-xmark"></i> ${err.message}</div>`;
+        showError(err.message);
+      }
 
       btn.classList.remove('loading'); btn.disabled = false;
-      progressEl.classList.remove('visible');
-      showResults(result);
     }
 
-    function getMockResult(name) {
-      return {
-        scan_id: 'scan-' + Math.random().toString(36).substr(2, 8),
-        duration_ms: 3000 + Math.floor(Math.random() * 3000),
-        risk_level: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
-        ai_summary: `Scanned ${currentType}:${name}. ${currentType === 'mvn' ? 'Maven dependency tree resolved. ' : ''}Found minor issues in dependency chain. No critical vulnerabilities detected. Code follows standard patterns with some areas for improvement.`,
-        findings: { security: { critical: 0, high: Math.floor(Math.random() * 2), medium: Math.floor(Math.random() * 5) }, quality: { score: ['A', 'A-', 'B+', 'B'][Math.floor(Math.random() * 4)], issues: Math.floor(Math.random() * 15) } },
-        recommendations: [
-          'Update transitive dependencies to latest patch versions',
-          'Add input validation for user-supplied data (OWASP A03)',
-          'Replace deprecated crypto functions (OWASP A02)',
-          'Add security logging for authentication events (OWASP A09)',
-          'Pin dependency versions to avoid supply-chain drift'
-        ]
-      };
+    function showError(msg) {
+      const el = document.getElementById('errorCard');
+      document.getElementById('errorText').innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${msg}`;
+      el.classList.add('visible');
     }
 
     function showResults(data) {
       document.getElementById('results').classList.add('visible');
       document.getElementById('duration').textContent = (data.duration_ms / 1000).toFixed(1) + 's';
-      document.getElementById('scanId').textContent = data.scan_id;
+      document.getElementById('scanId').textContent = data.scan_id || '-';
+
       const rb = document.getElementById('riskBadge');
-      rb.textContent = data.risk_level.toUpperCase();
-      rb.className = `risk-badge risk-${data.risk_level}`;
-      document.getElementById('aiSummary').textContent = data.ai_summary;
-      if (data.findings.security) {
+      rb.textContent = (data.risk_level || 'unknown').toUpperCase();
+      rb.className = `risk-badge risk-${data.risk_level || 'low'}`;
+
+      document.getElementById('aiSummary').textContent = data.ai_summary || 'No summary available.';
+
+      if (data.findings && data.findings.security) {
+        const sec = data.findings.security;
         const counts = document.querySelectorAll('#securityFindings .count-item .num');
-        counts[0].textContent = data.findings.security.critical;
-        counts[1].textContent = data.findings.security.high;
-        counts[2].textContent = data.findings.security.medium;
+        counts[0].textContent = sec.critical || 0;
+        counts[1].textContent = sec.high || 0;
+        counts[2].textContent = sec.medium || 0;
       }
-      if (data.findings.quality) {
-        document.getElementById('qualityFindings').innerHTML = `<span class="quality-score">${data.findings.quality.score}</span><div style="font-size:11px;color:var(--text-muted);margin-top:3px">${data.findings.quality.issues} issues</div>`;
+
+      if (data.findings && data.findings.quality) {
+        document.getElementById('qualityFindings').innerHTML = `
+          <span class="quality-score">${data.findings.quality.score || '-'}</span>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px">${data.findings.quality.issues || 0} issues</div>`;
       }
-      document.getElementById('recList').innerHTML = data.recommendations.map(r => `<li><i class="fa-solid fa-arrow-right"></i> ${r}</li>`).join('');
+
+      const recs = data.recommendations || [];
+      document.getElementById('recList').innerHTML = recs.length
+        ? recs.map(r => `<li><i class="fa-solid fa-arrow-right"></i> ${r}</li>`).join('')
+        : '<li><i class="fa-solid fa-check"></i> No recommendations — looking good!</li>';
     }
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }

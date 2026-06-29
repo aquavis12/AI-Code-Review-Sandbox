@@ -22,12 +22,41 @@ import uuid
 import time
 
 import boto3
-from microvm_client import MicroVMClient
-from reviewer import analyze_findings
-from scanners import build_scan_steps
+
+
+# Lazy imports for modules that may have heavy dependencies
+# This ensures OPTIONS/health requests don't fail on missing packages
+_microvm_client = None
+_reviewer = None
+_scanners = None
+
+
+def _get_microvm_client():
+    global _microvm_client
+    if _microvm_client is None:
+        from microvm_client import MicroVMClient
+        _microvm_client = MicroVMClient
+    return _microvm_client
+
+
+def _get_reviewer():
+    global _reviewer
+    if _reviewer is None:
+        from reviewer import analyze_findings
+        _reviewer = analyze_findings
+    return _reviewer
+
+
+def _get_scanners():
+    global _scanners
+    if _scanners is None:
+        from scanners import build_scan_steps
+        _scanners = build_scan_steps
+    return _scanners
+
 
 s3 = boto3.client('s3')
-RESULTS_BUCKET = os.environ['RESULTS_BUCKET']
+RESULTS_BUCKET = os.environ.get('RESULTS_BUCKET', '')
 
 
 def handler(event, context):
@@ -37,6 +66,19 @@ def handler(event, context):
     route_key = event.get('routeKey', '')
     method = event.get('requestContext', {}).get('http', {}).get('method', '')
     path = event.get('rawPath', '')
+
+    # Explicitly handle CORS preflight — must be BEFORE any heavy imports
+    if method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With',
+                'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
+                'Access-Control-Max-Age': '300',
+            },
+            'body': ''
+        }
 
     if method == 'POST' and ('/scan' in path or '/review' in path):
         return handle_scan(event)
@@ -48,7 +90,17 @@ def handler(event, context):
 
 def handle_scan(event):
     """Execute a scan in an isolated MicroVM."""
-    body = json.loads(event.get('body', '{}'))
+    raw_body = event.get('body', '{}')
+    
+    # HTTP API v2 may base64-encode the body
+    if event.get('isBase64Encoded', False):
+        import base64
+        raw_body = base64.b64decode(raw_body).decode('utf-8')
+    
+    try:
+        body = json.loads(raw_body) if raw_body else {}
+    except json.JSONDecodeError:
+        return response(400, {"error": f"Invalid JSON body: {repr(raw_body[:100])}"})
 
     # Support both new format (target) and legacy (repo_url)
     if 'target' in body:
@@ -73,12 +125,14 @@ def handle_scan(event):
 
     # Build scan steps based on target type
     try:
+        build_scan_steps = _get_scanners()
         steps = build_scan_steps(target)
     except ValueError as e:
         return response(400, {"error": str(e)})
 
     # Spawn MicroVM and execute
     try:
+        MicroVMClient = _get_microvm_client()
         with MicroVMClient() as vm:
             print(f"MicroVM spawned for scan {scan_id} ({target['type']}: {target['name']})")
             scan_results = vm.execute_steps(steps)
@@ -89,6 +143,7 @@ def handle_scan(event):
         })
 
     # AI analysis with Bedrock Kimi K2.5
+    analyze_findings = _get_reviewer()
     ai_report = analyze_findings(
         f"{target['type']}:{target['name']}",
         scan_results
