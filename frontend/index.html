@@ -32,7 +32,7 @@
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; padding: 40px 20px; }
-    .container { max-width: 860px; margin: 0 auto; }
+    .container { max-width: 900px; margin: 0 auto; }
 
     .header { text-align: center; margin-bottom: 32px; }
     .header h1 { font-size: 26px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -43,6 +43,15 @@
     .badge-blue { background: rgba(88,166,255,0.1); color: var(--accent); }
     .badge-purple { background: var(--purple-bg); color: var(--purple); }
     .badge-green { background: var(--success-bg); color: var(--success); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+    .tab:hover { color: var(--text-secondary); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab .count { background: var(--bg-card); border: 1px solid var(--border); padding: 1px 6px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
     .type-selector { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .type-btn { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; color: var(--text-secondary); font-size: 13px; font-weight: 500; transition: all 0.15s; flex: 1; justify-content: center; }
@@ -88,7 +97,11 @@
     .results.visible { display: block; }
     .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .result-header h2 { font-size: 16px; }
-    .result-meta { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); }
+    .result-actions { display: flex; gap: 8px; }
+    .btn-action { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px; font-weight: 500; border-radius: var(--radius); cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); transition: all 0.15s; text-decoration: none; }
+    .btn-action:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-action i { font-size: 11px; }
+    .result-meta { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
     .result-meta span { display: flex; align-items: center; gap: 4px; }
 
     .risk-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 100px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
@@ -124,7 +137,29 @@
     .error-card.visible { display: block; }
     .error-card p { color: var(--error); font-size: 13px; }
 
-    @media (max-width: 600px) { .form-row { flex-direction: column; } .findings-grid { grid-template-columns: 1fr; } .type-selector { flex-direction: column; } }
+    /* History */
+    .history-empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .history-empty i { font-size: 32px; margin-bottom: 12px; display: block; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item { display: flex; align-items: center; gap: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; cursor: pointer; transition: all 0.15s; }
+    .history-item:hover { border-color: var(--accent); }
+    .history-item .hi-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .history-item .hi-icon.pypi { background: rgba(55,118,171,0.15); color: #3776ab; }
+    .history-item .hi-icon.npm { background: rgba(203,56,55,0.15); color: #cb3837; }
+    .history-item .hi-icon.mvn { background: rgba(234,72,38,0.15); color: #ea4826; }
+    .history-item .hi-icon.git { background: rgba(88,166,255,0.15); color: var(--accent); }
+    .history-item .hi-body { flex: 1; min-width: 0; }
+    .history-item .hi-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-item .hi-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 10px; }
+    .history-item .hi-risk { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; flex-shrink: 0; }
+    .history-item .hi-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .history-item .hi-actions button { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); padding: 4px 8px; font-size: 11px; cursor: pointer; transition: all 0.15s; }
+    .history-item .hi-actions button:hover { border-color: var(--accent); color: var(--accent); }
+    .history-clear { margin-top: 16px; text-align: right; }
+    .history-clear button { background: none; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); padding: 6px 12px; font-size: 11px; cursor: pointer; }
+    .history-clear button:hover { border-color: var(--error); color: var(--error); }
+
+    @media (max-width: 600px) { .form-row { flex-direction: column; } .findings-grid { grid-template-columns: 1fr; } .type-selector { flex-direction: column; } .tabs { overflow-x: auto; } }
   </style>
 </head>
 <body>
@@ -139,92 +174,125 @@
       </div>
     </div>
 
-    <div class="type-selector">
-      <div class="type-btn active" data-type="pypi" onclick="setType('pypi')"><i class="fa-brands fa-python"></i> PyPI</div>
-      <div class="type-btn" data-type="npm" onclick="setType('npm')"><i class="fa-brands fa-npm"></i> npm</div>
-      <div class="type-btn" data-type="mvn" onclick="setType('mvn')"><i class="fa-brands fa-java"></i> Maven</div>
-      <div class="type-btn" data-type="git" onclick="setType('git')"><i class="fa-brands fa-github"></i> Git Repo</div>
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" data-tab="scan" onclick="switchTab('scan')"><i class="fa-solid fa-magnifying-glass"></i> Scan</div>
+      <div class="tab" data-tab="history" onclick="switchTab('history')"><i class="fa-solid fa-clock-rotate-left"></i> History <span class="count" id="historyCount">0</span></div>
     </div>
 
-    <div class="form-card">
-      <div class="form-row">
-        <div class="input-group" style="flex:3">
-          <label id="nameLabel">Package Name</label>
-          <input type="text" id="targetName" placeholder="requests">
-          <div class="hint" id="nameHint">e.g. requests, flask, django</div>
-        </div>
-        <div class="input-group" style="flex:1">
-          <label>Version</label>
-          <input type="text" id="targetVersion" placeholder="latest" value="latest">
-        </div>
+    <!-- Scan Tab -->
+    <div class="tab-content active" id="tab-scan">
+      <div class="type-selector">
+        <div class="type-btn active" data-type="pypi" onclick="setType('pypi')"><i class="fa-brands fa-python"></i> PyPI</div>
+        <div class="type-btn" data-type="npm" onclick="setType('npm')"><i class="fa-brands fa-npm"></i> npm</div>
+        <div class="type-btn" data-type="mvn" onclick="setType('mvn')"><i class="fa-brands fa-java"></i> Maven</div>
+        <div class="type-btn" data-type="git" onclick="setType('git')"><i class="fa-brands fa-github"></i> Git Repo</div>
       </div>
-      <div class="form-row">
-        <div class="input-group">
-          <label>Checks</label>
-          <div class="checks" id="checksContainer">
-            <label class="check-item active"><input type="checkbox" value="security" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> Security</label>
-            <label class="check-item active"><input type="checkbox" value="owasp" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> OWASP</label>
-            <label class="check-item active"><input type="checkbox" value="quality" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> Quality</label>
-            <label class="check-item"><input type="checkbox" value="license"><span class="check-icon"><i class="fa-solid fa-check"></i></span> License</label>
-            <label class="check-item"><input type="checkbox" value="typosquat"><span class="check-icon"><i class="fa-solid fa-check"></i></span> Typosquat</label>
+
+      <div class="form-card">
+        <div class="form-row">
+          <div class="input-group" style="flex:3">
+            <label id="nameLabel">Package Name</label>
+            <input type="text" id="targetName" placeholder="requests">
+            <div class="hint" id="nameHint">e.g. requests, flask, django</div>
+          </div>
+          <div class="input-group" style="flex:1">
+            <label>Version</label>
+            <input type="text" id="targetVersion" placeholder="latest" value="latest">
           </div>
         </div>
+        <div class="form-row">
+          <div class="input-group">
+            <label>Checks</label>
+            <div class="checks" id="checksContainer">
+              <label class="check-item active"><input type="checkbox" value="security" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> Security</label>
+              <label class="check-item active"><input type="checkbox" value="owasp" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> OWASP</label>
+              <label class="check-item active"><input type="checkbox" value="quality" checked><span class="check-icon"><i class="fa-solid fa-check"></i></span> Quality</label>
+              <label class="check-item"><input type="checkbox" value="license"><span class="check-icon"><i class="fa-solid fa-check"></i></span> License</label>
+              <label class="check-item"><input type="checkbox" value="typosquat"><span class="check-icon"><i class="fa-solid fa-check"></i></span> Typosquat</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <button class="btn-submit" id="submitBtn" onclick="startScan()">
+            <span class="spinner"></span>
+            <span class="btn-text"><i class="fa-solid fa-magnifying-glass"></i> Scan</span>
+          </button>
+        </div>
       </div>
-      <div class="form-row">
-        <button class="btn-submit" id="submitBtn" onclick="startScan()">
-          <span class="spinner"></span>
-          <span class="btn-text"><i class="fa-solid fa-magnifying-glass"></i> Scan</span>
-        </button>
-      </div>
-    </div>
 
-    <div class="progress" id="progress"></div>
+      <div class="progress" id="progress"></div>
+      <div class="error-card" id="errorCard"><p id="errorText"></p></div>
 
-    <div class="error-card" id="errorCard"><p id="errorText"></p></div>
-
-    <div class="results" id="results">
-      <div class="result-header">
-        <h2>Scan Complete</h2>
+      <div class="results" id="results">
+        <div class="result-header">
+          <h2>Scan Complete</h2>
+          <div class="result-actions">
+            <button class="btn-action" onclick="downloadReport('json')"><i class="fa-solid fa-download"></i> JSON</button>
+            <button class="btn-action" onclick="downloadReport('md')"><i class="fa-solid fa-file-lines"></i> Markdown</button>
+          </div>
+        </div>
         <div class="result-meta">
           <span><i class="fa-regular fa-clock"></i> <span id="duration">-</span></span>
           <span><i class="fa-solid fa-fingerprint"></i> <span id="scanId">-</span></span>
         </div>
-      </div>
-      <div style="margin-bottom:14px"><span class="risk-badge" id="riskBadge">-</span></div>
-      <div class="summary-card"><p id="aiSummary">-</p></div>
-      <div class="findings-grid">
-        <div class="finding-card">
-          <h3><i class="fa-solid fa-shield"></i> Security</h3>
-          <div class="finding-counts" id="securityFindings">
-            <div class="count-item critical"><span class="num">0</span><span class="label">Critical</span></div>
-            <div class="count-item high"><span class="num">0</span><span class="label">High</span></div>
-            <div class="count-item medium"><span class="num">0</span><span class="label">Medium</span></div>
+        <div style="margin-bottom:14px"><span class="risk-badge" id="riskBadge">-</span></div>
+        <div class="summary-card"><p id="aiSummary">-</p></div>
+        <div class="findings-grid">
+          <div class="finding-card">
+            <h3><i class="fa-solid fa-shield"></i> Security</h3>
+            <div class="finding-counts" id="securityFindings">
+              <div class="count-item critical"><span class="num">0</span><span class="label">Critical</span></div>
+              <div class="count-item high"><span class="num">0</span><span class="label">High</span></div>
+              <div class="count-item medium"><span class="num">0</span><span class="label">Medium</span></div>
+            </div>
+          </div>
+          <div class="finding-card">
+            <h3><i class="fa-solid fa-code"></i> Quality</h3>
+            <div id="qualityFindings"><span class="quality-score">-</span></div>
           </div>
         </div>
-        <div class="finding-card">
-          <h3><i class="fa-solid fa-code"></i> Quality</h3>
-          <div id="qualityFindings"><span class="quality-score">-</span></div>
+        <div class="recommendations">
+          <h3><i class="fa-solid fa-lightbulb"></i> Recommendations</h3>
+          <ul class="rec-list" id="recList"></ul>
         </div>
       </div>
-      <div class="recommendations">
-        <h3><i class="fa-solid fa-lightbulb"></i> Recommendations</h3>
-        <ul class="rec-list" id="recList"></ul>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content" id="tab-history">
+      <div id="historyContainer">
+        <div class="history-empty" id="historyEmpty">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <p>No scan history yet.<br>Run your first scan to see it here.</p>
+        </div>
+        <div class="history-list" id="historyList"></div>
+        <div class="history-clear" id="historyClear" style="display:none">
+          <button onclick="clearHistory()"><i class="fa-solid fa-trash"></i> Clear History</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // Same-origin API through CloudFront /api/* → Lambda Function URL
     const API_URL = 'https://ethypcxxie6jxw3enyrftlvygu0qzqzu.lambda-url.us-east-1.on.aws';
-
     let currentType = 'pypi';
+    let lastScanResult = null;
 
     const TYPE_CONFIG = {
-      pypi: { placeholder: 'requests', hint: 'e.g. requests, flask, django', label: 'Package Name' },
-      npm: { placeholder: 'express', hint: 'e.g. express, lodash, @angular/core', label: 'Package Name' },
-      mvn: { placeholder: 'org.apache.logging.log4j:log4j-core', hint: 'format: groupId:artifactId', label: 'Maven Artifact' },
-      git: { placeholder: 'https://github.com/user/repo', hint: 'Full Git URL', label: 'Repository URL' }
+      pypi: { placeholder: 'requests', hint: 'e.g. requests, flask, django', label: 'Package Name', icon: 'fa-brands fa-python' },
+      npm: { placeholder: 'express', hint: 'e.g. express, lodash, @angular/core', label: 'Package Name', icon: 'fa-brands fa-npm' },
+      mvn: { placeholder: 'org.apache.logging.log4j:log4j-core', hint: 'format: groupId:artifactId', label: 'Maven Artifact', icon: 'fa-brands fa-java' },
+      git: { placeholder: 'https://github.com/user/repo', hint: 'Full Git URL', label: 'Repository URL', icon: 'fa-brands fa-github' }
     };
+
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      if (tab === 'history') renderHistory();
+    }
 
     function setType(type) {
       currentType = type;
@@ -251,6 +319,186 @@
       return Array.from(document.querySelectorAll('.check-item input:checked')).map(c => c.value);
     }
 
+    // Scan History (localStorage)
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem('scanHistory') || '[]'); }
+      catch { return []; }
+    }
+
+    function saveToHistory(scanData) {
+      const history = getHistory();
+      history.unshift({
+        id: scanData.scan_id || 'scan-' + Date.now().toString(36),
+        target: scanData._request?.target?.name || 'unknown',
+        type: scanData._request?.target?.type || currentType,
+        version: scanData._request?.target?.version || 'latest',
+        risk_level: scanData.risk_level || 'unknown',
+        summary: scanData.ai_summary || scanData.summary || '',
+        duration_ms: scanData.duration_ms || 0,
+        timestamp: new Date().toISOString(),
+        data: scanData
+      });
+      // Keep last 50 scans
+      if (history.length > 50) history.length = 50;
+      localStorage.setItem('scanHistory', JSON.stringify(history));
+      updateHistoryCount();
+    }
+
+    function updateHistoryCount() {
+      const count = getHistory().length;
+      document.getElementById('historyCount').textContent = count;
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      const listEl = document.getElementById('historyList');
+      const emptyEl = document.getElementById('historyEmpty');
+      const clearEl = document.getElementById('historyClear');
+
+      if (history.length === 0) {
+        emptyEl.style.display = 'block';
+        listEl.innerHTML = '';
+        clearEl.style.display = 'none';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      clearEl.style.display = 'block';
+
+      listEl.innerHTML = history.map((item, idx) => {
+        const riskClass = `risk-${item.risk_level}`;
+        const time = new Date(item.timestamp);
+        const timeStr = time.toLocaleDateString() + ' ' + time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        return `
+          <div class="history-item" onclick="viewHistoryItem(${idx})">
+            <div class="hi-icon ${item.type}"><i class="${TYPE_CONFIG[item.type]?.icon || 'fa-solid fa-cube'}"></i></div>
+            <div class="hi-body">
+              <div class="hi-name">${item.target}@${item.version}</div>
+              <div class="hi-meta">
+                <span>${item.type.toUpperCase()}</span>
+                <span>${timeStr}</span>
+                <span>${item.duration_ms ? (item.duration_ms/1000).toFixed(1) + 's' : '-'}</span>
+              </div>
+            </div>
+            <span class="hi-risk ${riskClass}">${item.risk_level}</span>
+            <div class="hi-actions">
+              <button onclick="event.stopPropagation(); downloadHistoryItem(${idx}, 'json')" title="Download JSON"><i class="fa-solid fa-download"></i></button>
+              <button onclick="event.stopPropagation(); deleteHistoryItem(${idx})" title="Delete"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function viewHistoryItem(idx) {
+      const history = getHistory();
+      const item = history[idx];
+      if (item && item.data) {
+        lastScanResult = item.data;
+        showResults(item.data);
+        switchTab('scan');
+      }
+    }
+
+    function downloadHistoryItem(idx, format) {
+      const history = getHistory();
+      const item = history[idx];
+      if (item && item.data) {
+        lastScanResult = item.data;
+        downloadReport(format);
+      }
+    }
+
+    function deleteHistoryItem(idx) {
+      const history = getHistory();
+      history.splice(idx, 1);
+      localStorage.setItem('scanHistory', JSON.stringify(history));
+      updateHistoryCount();
+      renderHistory();
+    }
+
+    function clearHistory() {
+      if (confirm('Clear all scan history?')) {
+        localStorage.removeItem('scanHistory');
+        updateHistoryCount();
+        renderHistory();
+      }
+    }
+
+    // Download Report
+    function downloadReport(format) {
+      if (!lastScanResult) return;
+      const data = lastScanResult;
+      let content, filename, mime;
+
+      if (format === 'json') {
+        content = JSON.stringify(data, null, 2);
+        filename = `scan-report-${data.scan_id || Date.now()}.json`;
+        mime = 'application/json';
+      } else {
+        content = generateMarkdownReport(data);
+        filename = `scan-report-${data.scan_id || Date.now()}.md`;
+        mime = 'text/markdown';
+      }
+
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function generateMarkdownReport(data) {
+      const target = data._request?.target || {};
+      const sec = data.findings?.security || {};
+      const qual = data.findings?.quality || {};
+      const recs = data.recommendations || [];
+
+      let md = `# Scan Report\n\n`;
+      md += `**Target:** ${target.name || 'N/A'} (${target.type || 'N/A'})\n`;
+      md += `**Version:** ${target.version || 'latest'}\n`;
+      md += `**Scan ID:** ${data.scan_id || '-'}\n`;
+      md += `**Duration:** ${data.duration_ms ? (data.duration_ms/1000).toFixed(1) + 's' : '-'}\n`;
+      md += `**Risk Level:** ${(data.risk_level || 'unknown').toUpperCase()}\n`;
+      md += `**Date:** ${new Date().toISOString()}\n\n`;
+      md += `---\n\n`;
+      md += `## Summary\n\n${data.ai_summary || data.summary || 'No summary available.'}\n\n`;
+      md += `## Security Findings\n\n`;
+      md += `| Severity | Count |\n|----------|-------|\n`;
+      md += `| Critical | ${sec.critical || 0} |\n`;
+      md += `| High | ${sec.high || 0} |\n`;
+      md += `| Medium | ${sec.medium || 0} |\n`;
+      md += `| Low | ${sec.low || 0} |\n\n`;
+
+      if (sec.details && sec.details.length) {
+        md += `### Details\n\n`;
+        sec.details.forEach(d => {
+          md += `- **${d.severity?.toUpperCase()}** — ${d.description || d}\n`;
+        });
+        md += '\n';
+      }
+
+      md += `## Quality\n\n`;
+      md += `- **Score:** ${qual.score || '-'}\n`;
+      md += `- **Issues:** ${qual.issues || 0}\n\n`;
+
+      if (recs.length) {
+        md += `## Recommendations\n\n`;
+        recs.forEach((r, i) => {
+          if (typeof r === 'string') {
+            md += `${i+1}. ${r}\n`;
+          } else {
+            md += `${i+1}. **${r.action}** — ${r.reason || ''} (effort: ${r.effort || '-'})\n`;
+          }
+        });
+      }
+
+      return md;
+    }
+
+    // Scan
     async function startScan() {
       const name = document.getElementById('targetName').value.trim();
       if (!name) { document.getElementById('targetName').focus(); return; }
@@ -258,43 +506,22 @@
       const version = document.getElementById('targetVersion').value.trim() || 'latest';
       const checks = getSelectedChecks();
 
-      if (checks.length === 0) {
-        showError('Select at least one check to run.');
-        return;
-      }
+      if (checks.length === 0) { showError('Select at least one check to run.'); return; }
 
       const btn = document.getElementById('submitBtn');
       btn.classList.add('loading'); btn.disabled = true;
       document.getElementById('results').classList.remove('visible');
       document.getElementById('errorCard').classList.remove('visible');
 
-      // Show progress
       const progressEl = document.getElementById('progress');
       progressEl.classList.add('visible');
       progressEl.innerHTML = '<div class="step active"><i class="fa-solid fa-circle-notch fa-spin"></i> Sending scan request...</div>';
 
-      // Build request body
       const body = {
-        target: {
-          type: currentType,
-          name: name,
-          version: version,
-          checks: checks
-        }
+        target: { type: currentType, name, version, checks }
       };
-      if (currentType === 'git') {
-        body.target.branch = version;
-      }
+      if (currentType === 'git') body.target.branch = version;
 
-      // Check if API is configured
-      if (!API_URL) {
-        showError('API not connected. Set API_URL in the frontend code after deploying the backend. Run: terraform output api_url');
-        btn.classList.remove('loading'); btn.disabled = false;
-        progressEl.classList.remove('visible');
-        return;
-      }
-
-      // Call real API
       try {
         progressEl.innerHTML = '<div class="step active"><i class="fa-solid fa-circle-notch fa-spin"></i> Scanning in isolated MicroVM...</div>';
 
@@ -306,16 +533,18 @@
         });
 
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error || `API returned ${response.status}`);
 
-        if (!response.ok) {
-          throw new Error(data.error || `API returned ${response.status}`);
-        }
+        // Attach request metadata for history
+        data._request = body;
 
         progressEl.innerHTML = '<div class="step done"><i class="fa-solid fa-check"></i> Scan complete</div>';
         await sleep(500);
         progressEl.classList.remove('visible');
 
+        lastScanResult = data;
         showResults(data);
+        saveToHistory(data);
 
       } catch (err) {
         progressEl.innerHTML = `<div class="step error"><i class="fa-solid fa-xmark"></i> ${err.message}</div>`;
@@ -333,14 +562,14 @@
 
     function showResults(data) {
       document.getElementById('results').classList.add('visible');
-      document.getElementById('duration').textContent = (data.duration_ms / 1000).toFixed(1) + 's';
+      document.getElementById('duration').textContent = data.duration_ms ? (data.duration_ms / 1000).toFixed(1) + 's' : '-';
       document.getElementById('scanId').textContent = data.scan_id || '-';
 
       const rb = document.getElementById('riskBadge');
       rb.textContent = (data.risk_level || 'unknown').toUpperCase();
       rb.className = `risk-badge risk-${data.risk_level || 'low'}`;
 
-      document.getElementById('aiSummary').textContent = data.ai_summary || 'No summary available.';
+      document.getElementById('aiSummary').textContent = data.ai_summary || data.summary || 'No summary available.';
 
       if (data.findings && data.findings.security) {
         const sec = data.findings.security;
@@ -358,11 +587,17 @@
 
       const recs = data.recommendations || [];
       document.getElementById('recList').innerHTML = recs.length
-        ? recs.map(r => `<li><i class="fa-solid fa-arrow-right"></i> ${r}</li>`).join('')
+        ? recs.map(r => {
+            const text = typeof r === 'string' ? r : r.action || JSON.stringify(r);
+            return `<li><i class="fa-solid fa-arrow-right"></i> ${text}</li>`;
+          }).join('')
         : '<li><i class="fa-solid fa-check"></i> No recommendations — looking good!</li>';
     }
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // Init
+    updateHistoryCount();
   </script>
 </body>
 </html>
