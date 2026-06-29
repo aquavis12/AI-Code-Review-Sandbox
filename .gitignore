@@ -16,5 +16,12 @@ Thumbs.db
 
 # Build artifacts
 *.zip
-IDEAS.md
-WHY.md
+python/
+
+# Lambda layer build
+layer/python/
+layer/layer.zip
+
+# Generated docs
+docs/*.docx
+docs/*.png

@@ -14,6 +14,27 @@ import boto3
 
 REGION = os.environ.get('AWS_REGION', 'us-east-1')
 IMAGE_NAME = os.environ.get('MICROVM_IMAGE_NAME', 'code-review-sandbox')
+ACCOUNT_ID = None
+
+
+def _get_account_id():
+    """Get AWS account ID (cached)."""
+    global ACCOUNT_ID
+    if ACCOUNT_ID is None:
+        sts = boto3.client('sts', region_name=REGION)
+        ACCOUNT_ID = sts.get_caller_identity()['Account']
+    return ACCOUNT_ID
+
+
+def _get_image_arn():
+    """Build full ARN for the MicroVM image."""
+    name = IMAGE_NAME
+    # If already a full ARN, use as-is
+    if name.startswith('arn:'):
+        return name
+    # Otherwise build it
+    account_id = _get_account_id()
+    return f'arn:aws:lambda:{REGION}:{account_id}:microvm-image:{name}'
 
 
 class MicroVMClient:
@@ -29,7 +50,7 @@ class MicroVMClient:
         """Run a new MicroVM from the pre-built image. Returns the endpoint URL."""
 
         response = self.client.run_microvm(
-            imageIdentifier=IMAGE_NAME,
+            imageIdentifier=_get_image_arn(),
             ingressNetworkConnectors=[
                 f'arn:aws:lambda:{REGION}:aws:network-connector:aws-network-connector:ALL_INGRESS'
             ],
@@ -55,7 +76,13 @@ class MicroVMClient:
             expirationInMinutes=10,
             allowedPorts=[{'allPorts': {}}]
         )
-        self.auth_token = token_response['authToken']
+        # Token may be a string or a dict with header name as key
+        token = token_response['authToken']
+        if isinstance(token, dict):
+            # Extract the token value from the dict
+            self.auth_token = list(token.values())[0]
+        else:
+            self.auth_token = token
 
         print(f"MicroVM running: {self.microvm_id}")
         print(f"Endpoint: {self.endpoint}")

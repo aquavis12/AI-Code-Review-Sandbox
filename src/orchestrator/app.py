@@ -2,18 +2,11 @@
 Orchestrator Lambda — Receives scan requests, manages MicroVM lifecycle.
 
 Supports:
-- POST /review       → Scan a Git repo (legacy)
 - POST /scan         → Scan PyPI package, npm package, or Git repo
+- POST /review       → Legacy (same as /scan)
 - GET  /review/{id}  → Get a previous scan report
 
-Flow:
-1. Receive request with target (pypi/npm/git)
-2. Spawn a Lambda MicroVM
-3. Execute scan steps (install, audit, analyze)
-4. Collect results → send to Bedrock Kimi K2.5 for AI analysis
-5. Store report in S3
-6. Terminate MicroVM
-7. Return scan report
+Uses Lambda Function URL (no 30s timeout limit).
 """
 
 import json
@@ -25,7 +18,6 @@ import boto3
 
 
 # Lazy imports for modules that may have heavy dependencies
-# This ensures OPTIONS/health requests don't fail on missing packages
 _microvm_client = None
 _reviewer = None
 _scanners = None
@@ -60,25 +52,10 @@ RESULTS_BUCKET = os.environ.get('RESULTS_BUCKET', '')
 
 
 def handler(event, context):
-    """API Gateway entry point."""
-    
-    # HTTP API v2 format
-    route_key = event.get('routeKey', '')
+    """Lambda Function URL entry point."""
+
     method = event.get('requestContext', {}).get('http', {}).get('method', '')
     path = event.get('rawPath', '')
-
-    # Explicitly handle CORS preflight — must be BEFORE any heavy imports
-    if method == 'OPTIONS':
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With',
-                'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
-                'Access-Control-Max-Age': '300',
-            },
-            'body': ''
-        }
 
     if method == 'POST' and ('/scan' in path or '/review' in path):
         return handle_scan(event)
@@ -89,24 +66,22 @@ def handler(event, context):
 
 
 def handle_scan(event):
-    """Execute a scan in an isolated MicroVM."""
+    """Execute a scan synchronously — Function URL allows up to 15 min."""
     raw_body = event.get('body', '{}')
-    
-    # HTTP API v2 may base64-encode the body
+
     if event.get('isBase64Encoded', False):
         import base64
         raw_body = base64.b64decode(raw_body).decode('utf-8')
-    
+
     try:
         body = json.loads(raw_body) if raw_body else {}
     except json.JSONDecodeError:
-        return response(400, {"error": f"Invalid JSON body: {repr(raw_body[:100])}"})
+        return response(400, {"error": "Invalid JSON body"})
 
     # Support both new format (target) and legacy (repo_url)
     if 'target' in body:
         target = body['target']
     elif 'repo_url' in body:
-        # Legacy format
         target = {
             "type": "git",
             "name": body['repo_url'],
@@ -116,14 +91,13 @@ def handle_scan(event):
     else:
         return response(400, {"error": "Provide 'target' object or 'repo_url'"})
 
-    # Validate
     if not target.get('name'):
         return response(400, {"error": "target.name is required"})
 
     scan_id = f"scan-{uuid.uuid4().hex[:8]}"
     start_time = time.time()
 
-    # Build scan steps based on target type
+    # Build scan steps
     try:
         build_scan_steps = _get_scanners()
         steps = build_scan_steps(target)
@@ -142,7 +116,7 @@ def handle_scan(event):
             "scan_id": scan_id
         })
 
-    # AI analysis with Bedrock Kimi K2.5
+    # AI analysis with Bedrock
     analyze_findings = _get_reviewer()
     ai_report = analyze_findings(
         f"{target['type']}:{target['name']}",
@@ -185,7 +159,14 @@ def handle_status(event):
     path_params = event.get('pathParameters', {})
     scan_id = path_params.get('review_id', '')
 
-    # Try both prefixes
+    # Function URL doesn't have pathParameters, parse from rawPath
+    if not scan_id:
+        path = event.get('rawPath', '')
+        # /review/scan-abc123
+        parts = path.strip('/').split('/')
+        if len(parts) >= 2:
+            scan_id = parts[-1]
+
     for prefix in ['scans/', 'reviews/']:
         try:
             obj = s3.get_object(Bucket=RESULTS_BUCKET, Key=f"{prefix}{scan_id}.json")
@@ -201,10 +182,7 @@ def response(status_code: int, body: dict) -> dict:
     return {
         'statusCode': status_code,
         'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With',
-            'Access-Control-Allow-Methods': 'POST,GET,OPTIONS'
+            'Content-Type': 'application/json'
         },
         'body': json.dumps(body)
     }
