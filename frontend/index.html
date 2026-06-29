@@ -458,25 +458,32 @@
     function downloadReport(format) {
       if (!lastScanResult) return;
       const data = lastScanResult;
-      let content, filename, mime;
 
       if (format === 'json') {
-        content = JSON.stringify(data, null, 2);
-        filename = `scan-report-${data.scan_id || Date.now()}.json`;
-        mime = 'application/json';
+        // Use presigned S3 URL if available
+        if (data.report_url) {
+          window.open(data.report_url, '_blank');
+          return;
+        }
+        // Fallback: download from local data
+        const content = JSON.stringify(data, null, 2);
+        const filename = `scan-report-${data.scan_id || Date.now()}.json`;
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
       } else {
-        content = generateMarkdownReport(data);
-        filename = `scan-report-${data.scan_id || Date.now()}.md`;
-        mime = 'text/markdown';
+        const content = generateMarkdownReport(data);
+        const filename = `scan-report-${data.scan_id || Date.now()}.md`;
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
       }
-
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     }
 
     function generateMarkdownReport(data) {

@@ -61,6 +61,8 @@ def handler(event, context):
         return handle_scan(event)
     elif method == 'GET' and '/review/' in path:
         return handle_status(event)
+    elif method == 'GET' and '/download/' in path:
+        return handle_download(event)
     else:
         return response(404, {"error": "Not found"})
 
@@ -142,6 +144,17 @@ def handle_scan(event):
         ContentType='application/json'
     )
 
+    # Generate presigned download URL (valid for 1 hour)
+    report_url = ''
+    try:
+        report_url = s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': RESULTS_BUCKET, 'Key': f"scans/{scan_id}.json"},
+            ExpiresIn=3600
+        )
+    except Exception:
+        pass
+
     # Return summary
     return response(200, {
         "scan_id": scan_id,
@@ -150,7 +163,8 @@ def handle_scan(event):
         "risk_level": ai_report.get('risk_level', 'unknown'),
         "ai_summary": ai_report.get('summary', ''),
         "findings": ai_report.get('findings', {}),
-        "recommendations": ai_report.get('recommendations', [])
+        "recommendations": ai_report.get('recommendations', []),
+        "report_url": report_url
     })
 
 
@@ -176,6 +190,35 @@ def handle_status(event):
             continue
 
     return response(404, {"error": f"Scan {scan_id} not found"})
+
+
+def handle_download(event):
+    """Generate a presigned S3 URL for downloading a scan report."""
+    path = event.get('rawPath', '')
+    # /download/scan-abc123
+    parts = path.strip('/').split('/')
+    scan_id = parts[-1] if len(parts) >= 2 else ''
+
+    if not scan_id:
+        return response(400, {"error": "Scan ID required"})
+
+    # Check if report exists
+    key = f"scans/{scan_id}.json"
+    try:
+        s3.head_object(Bucket=RESULTS_BUCKET, Key=key)
+    except Exception:
+        return response(404, {"error": f"Report {scan_id} not found"})
+
+    # Generate presigned URL (1 hour expiry)
+    try:
+        url = s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': RESULTS_BUCKET, 'Key': key},
+            ExpiresIn=3600
+        )
+        return response(200, {"download_url": url, "scan_id": scan_id, "expires_in": 3600})
+    except Exception as e:
+        return response(500, {"error": f"Failed to generate download URL: {str(e)}"})
 
 
 def response(status_code: int, body: dict) -> dict:
