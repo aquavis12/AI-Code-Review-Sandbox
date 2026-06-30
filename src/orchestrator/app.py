@@ -63,6 +63,10 @@ def handler(event, context):
         return handle_status(event)
     elif method == 'GET' and '/download/' in path:
         return handle_download(event)
+    elif method == 'POST' and '/skills' in path:
+        return handle_upload_skill(event)
+    elif method == 'GET' and '/skills' in path:
+        return handle_list_skills(event)
     else:
         return response(404, {"error": "Not found"})
 
@@ -219,6 +223,83 @@ def handle_download(event):
         return response(200, {"download_url": url, "scan_id": scan_id, "expires_in": 3600})
     except Exception as e:
         return response(500, {"error": f"Failed to generate download URL: {str(e)}"})
+
+
+def handle_upload_skill(event):
+    """Upload a custom context skill (.md file) to S3 for AI awareness."""
+    raw_body = event.get('body', '{}')
+    if event.get('isBase64Encoded', False):
+        import base64
+        raw_body = base64.b64decode(raw_body).decode('utf-8')
+
+    try:
+        body = json.loads(raw_body) if raw_body else {}
+    except json.JSONDecodeError:
+        return response(400, {"error": "Invalid JSON body"})
+
+    name = body.get('name', '').strip()
+    content = body.get('content', '').strip()
+
+    if not name or not content:
+        return response(400, {"error": "Both 'name' and 'content' are required"})
+
+    # Sanitize filename
+    if not name.endswith('.md'):
+        name = name + '.md'
+    name = name.replace('/', '_').replace('\\', '_')
+
+    # Store in S3 under context_skills/
+    key = f"context_skills/{name}"
+    try:
+        s3.put_object(
+            Bucket=RESULTS_BUCKET,
+            Key=key,
+            Body=content.encode('utf-8'),
+            ContentType='text/markdown'
+        )
+    except Exception as e:
+        return response(500, {"error": f"Failed to upload skill: {str(e)}"})
+
+    # Also write to local /tmp for immediate use
+    try:
+        skill_dir = os.environ.get('CUSTOM_SKILLS_DIR', '/tmp/context_skills')
+        os.makedirs(skill_dir, exist_ok=True)
+        with open(os.path.join(skill_dir, name), 'w', encoding='utf-8') as f:
+            f.write(content)
+    except Exception:
+        pass
+
+    return response(200, {
+        "message": f"Skill '{name}' uploaded successfully",
+        "key": key,
+        "name": name
+    })
+
+
+def handle_list_skills(event):
+    """List all available context skills (built-in + custom)."""
+    from context_skills import list_skills, ECOSYSTEM_SKILLS
+
+    skills = list_skills()
+
+    # List custom skills from S3
+    custom = []
+    try:
+        resp = s3.list_objects_v2(Bucket=RESULTS_BUCKET, Prefix='context_skills/')
+        for obj in resp.get('Contents', []):
+            name = obj['Key'].replace('context_skills/', '')
+            if name and name.endswith('.md'):
+                custom.append({
+                    "id": name.replace('.md', ''),
+                    "name": name,
+                    "type": "custom",
+                    "size": obj['Size'],
+                    "last_modified": obj['LastModified'].isoformat()
+                })
+    except Exception:
+        pass
+
+    return response(200, {"built_in": skills, "custom": custom})
 
 
 def response(status_code: int, body: dict) -> dict:

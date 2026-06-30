@@ -55,7 +55,7 @@ jobs:
       - name: Package Orchestrator
         run: |
           cd src/orchestrator
-          zip -r ../../lambda.zip app.py scanners.py microvm_client.py reviewer.py
+          zip -r ../../lambda.zip app.py scanners.py microvm_client.py reviewer.py context_skills.py
           cd ../..
 
       - name: Deploy Lambda Code
